@@ -74,9 +74,18 @@ To integrate with a real prediction model:
 }
 ```
 
+## Version Control
+This project is version controlled using Git. To contribute to this project:
+
+1. Clone the repository
+2. Create a new branch for your feature
+3. Make your changes
+4. Submit a pull request
+
 ## Future Enhancements
 - Add more questions to each section's question pool
 - Implement a backend server to store quiz results
 - Add user authentication
 - Enhance the UI with animations and transitions
 - Provide more detailed career path recommendations
+- Implement automated testing
