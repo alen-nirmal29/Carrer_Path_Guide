@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Path Prediction Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Career Path Prediction Quiz</h1>
+            <p>Complete the quiz and provide additional information to get your career path prediction</p>
+        </header>
+
+        <div id="quiz-container">
+            <!-- Quiz sections will be dynamically loaded here -->
+            <div id="start-screen" class="section active">
+                <h2>Welcome to the Career Path Prediction Quiz</h2>
+                <p>This quiz will help determine the best career path based on your skills and preferences.</p>
+                <p>The quiz consists of four sections:</p>
+                <ul>
+                    <li>Logical Reasoning</li>
+                    <li>Coding Knowledge</li>
+                    <li>Quantitative Skills</li>
+                    <li>Verbal Reasoning</li>
+                </ul>
+                <p>After completing the quiz, you'll be asked to provide additional information about your academic background and interests.</p>
+                <button id="start-btn" class="btn primary-btn">Start Quiz</button>
+            </div>
+
+            <div id="logical-section" class="section">
+                <h2>Section 1: Logical Reasoning</h2>
+                <div id="logical-questions"></div>
+                <div class="navigation-buttons">
+                    <button id="logical-next" class="btn primary-btn">Next Section</button>
+                </div>
+            </div>
+
+            <div id="coding-section" class="section">
+                <h2>Section 2: Coding Knowledge</h2>
+                <div id="coding-questions"></div>
+                <div class="navigation-buttons">
+                    <button id="coding-prev" class="btn secondary-btn">Previous</button>
+                    <button id="coding-next" class="btn primary-btn">Next Section</button>
+                </div>
+            </div>
+
+            <div id="quantitative-section" class="section">
+                <h2>Section 3: Quantitative Skills</h2>
+                <div id="quantitative-questions"></div>
+                <div class="navigation-buttons">
+                    <button id="quantitative-prev" class="btn secondary-btn">Previous</button>
+                    <button id="quantitative-next" class="btn primary-btn">Next Section</button>
+                </div>
+            </div>
+
+            <div id="verbal-section" class="section">
+                <h2>Section 4: Verbal Reasoning</h2>
+                <div id="verbal-questions"></div>
+                <div class="navigation-buttons">
+                    <button id="verbal-prev" class="btn secondary-btn">Previous</button>
+                    <button id="verbal-next" class="btn primary-btn">Next</button>
+                </div>
+            </div>
+
+            <div id="additional-info-section" class="section">
+                <h2>Additional Information</h2>
+                <form id="additional-info-form">
+                    <!-- Form fields will be added dynamically -->
+                </form>
+                <div class="navigation-buttons">
+                    <button id="info-prev" class="btn secondary-btn">Previous</button>
+                    <button id="submit-quiz" class="btn primary-btn">Submit</button>
+                </div>
+            </div>
+
+            <div id="results-section" class="section">
+                <h2>Your Results</h2>
+                <div id="results-content">
+                    <div class="loader">Processing your results...</div>
+                    <div id="prediction-result" style="display: none;">
+                        <h3>Recommended Career Path:</h3>
+                        <div id="career-path"></div>
+                        <div id="scores-summary"></div>
+                    </div>
+                </div>
+                <button id="restart-quiz" class="btn primary-btn">Take Quiz Again</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Career Path Prediction System</p>
+    </footer>
+
+    <script src="js/questions.js"></script>
+    <script src="js/quiz.js"></script>
+    <script src="js/form.js"></script>
+</body>
+</html>
