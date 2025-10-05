@@ -146,6 +146,12 @@ footer {
     margin-right: 10px;
 }
 
+/* Required marker for unanswered questions */
+.required-marker {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
 /* Form Styles */
 #additional-info-form {
     display: grid;

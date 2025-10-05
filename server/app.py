@@ -120,15 +120,110 @@ def predict():
         else:
             mlb_arr = np.zeros((1, 0))
 
-        # Transform categorical columns
-        # Ensure column_transformer receives columns in the form it was trained on
-        # If it's a ColumnTransformer that expects the categorical columns by name,
-        # passing df_cat with the same column names and order should be fine.
-        cat_trans = column_transformer.transform(df_cat)
-        cat_trans = to_array(cat_trans)
+        # The column_transformer may expect both numeric and categorical columns
+        # (it might contain pipelines for numeric preprocessing). Build a single
+        # DataFrame with the same column names used for training and pass it to
+        # the transformer.
+        df_all = pd.concat([df_numeric, df_cat], axis=1)[NUMERIC_COLS + CATEGORICAL_COLS]
 
-        # Combine features: numeric + categorical transformed + multilabel interests
-        X = np.hstack([df_numeric.values, cat_trans, mlb_arr])
+        try:
+            cat_trans = column_transformer.transform(df_all)
+            cat_trans = to_array(cat_trans)
+        except Exception as ex:
+            # Try to provide useful debugging info about expected columns
+            expected = None
+            try:
+                expected = getattr(column_transformer, 'feature_names_in_', None)
+            except Exception:
+                expected = None
+
+            details = {
+                'transform_error': str(ex),
+                'provided_columns': list(df_all.columns)
+            }
+            if expected is not None:
+                details['transformer_feature_names_in_'] = list(expected)
+            else:
+                # Try to extract transformer component names
+                try:
+                    details['transformers_'] = [t[0] for t in getattr(column_transformer, 'transformers_', [])]
+                except Exception:
+                    pass
+
+            return jsonify({'error': 'column_transformer transform failed', 'details': details}), 500
+
+        # Combine features carefully. The column_transformer may already include
+        # numeric pipelines, so cat_trans could represent the full model inputs
+        # (excluding the MultiLabelBinarizer output). Avoid double-counting
+        # numeric columns.
+        cat_trans = np.atleast_2d(cat_trans)
+        mlb_arr = np.atleast_2d(mlb_arr)
+        numeric_vals = np.atleast_2d(df_numeric.values)
+
+        model_expected = getattr(career_model, 'n_features_in_', None)
+
+        cat_dim = cat_trans.shape[1]
+        mlb_dim = mlb_arr.shape[1] if mlb_arr.size > 0 else 0
+        num_dim = numeric_vals.shape[1]
+
+        # Helper to build X from components
+        def build_X(use_numeric, use_cat, use_mlb):
+            parts = []
+            if use_numeric:
+                parts.append(numeric_vals)
+            if use_cat:
+                parts.append(cat_trans)
+            if use_mlb and mlb_dim > 0:
+                parts.append(mlb_arr)
+            if not parts:
+                return np.zeros((numeric_vals.shape[0], 0))
+            return np.hstack(parts)
+
+        chosen_X = None
+        chosen_desc = None
+
+        # If model exposes expected n_features_in_, try to match precisely
+        if model_expected is not None:
+            # Option A: transformer output + mlb
+            if cat_dim + mlb_dim == model_expected:
+                chosen_X = build_X(False, True, True)
+                chosen_desc = 'cat_trans + mlb'
+            # Option B: numeric raw + transformer output + mlb
+            elif num_dim + cat_dim + mlb_dim == model_expected:
+                chosen_X = build_X(True, True, True)
+                chosen_desc = 'numeric + cat_trans + mlb'
+            # Option C: transformer output only
+            elif cat_dim == model_expected and mlb_dim == 0:
+                chosen_X = build_X(False, True, False)
+                chosen_desc = 'cat_trans only'
+            # Option D: numeric + transformer (no mlb)
+            elif num_dim + cat_dim == model_expected and mlb_dim == 0:
+                chosen_X = build_X(True, True, False)
+                chosen_desc = 'numeric + cat_trans'
+            else:
+                # No exact match; return diagnostic
+                provided = num_dim + cat_dim + mlb_dim
+                details = {
+                    'model_expected_features': int(model_expected),
+                    'num_dim': int(num_dim),
+                    'cat_dim': int(cat_dim),
+                    'mlb_dim': int(mlb_dim),
+                    'provided_if_all_concatenated': int(provided),
+                    'note': 'Tried common stacking options but none matched model expected feature count.'
+                }
+                return jsonify({'error': 'Feature shape mismatch', 'details': details}), 500
+        else:
+            # No model metadata — heuristics: if cat_trans produces at least as many
+            # features as numeric inputs, it's likely the transformer contains numeric
+            # pipelines and we should not add raw numeric columns.
+            if cat_dim >= num_dim:
+                chosen_X = build_X(False, True, True)
+                chosen_desc = 'cat_trans + mlb (heuristic)'
+            else:
+                chosen_X = build_X(True, True, True)
+                chosen_desc = 'numeric + cat_trans + mlb (heuristic)'
+
+        X = chosen_X
 
         # Predict
         pred_encoded = career_model.predict(X)

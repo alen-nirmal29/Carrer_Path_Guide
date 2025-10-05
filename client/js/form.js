@@ -443,3 +443,5 @@ function getFormData() {
 
 // Export the getFormData function for use in quiz.js
 window.getFormData = getFormData;
+// Export validateForm so other scripts (quiz.js) can call it before submitting
+window.validateForm = validateForm;

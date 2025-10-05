@@ -200,6 +200,21 @@ function calculateSectionScore(section) {
  * Handle quiz submission
  */
 function handleQuizSubmission() {
+    // Before calculating scores, validate all quiz questions have been answered
+    if (!validateQuizAnswered()) {
+        alert('Please answer all quiz questions before submitting. Unanswered questions are highlighted.');
+        return;
+    }
+
+    // Validate additional info form
+    if (typeof window.validateForm === 'function') {
+        if (!window.validateForm()) {
+            // validateForm shows alerts for form errors; also navigate to additional info section
+            navigateToSection('additional-info-section');
+            return;
+        }
+    }
+
     // Calculate scores for each section
     quizData.scores.LogicalScore = calculateSectionScore('logical');
     quizData.scores.CodingScore = calculateSectionScore('coding');
@@ -231,7 +246,14 @@ function handleQuizSubmission() {
         document.getElementById('prediction-result').style.display = 'block';
 
         if (response.error) {
-            document.getElementById('career-path').textContent = 'Error: ' + response.error;
+            const careerEl = document.getElementById('career-path');
+            careerEl.textContent = 'Error: ' + response.error;
+            if (response.details) {
+                const detailsEl = document.createElement('pre');
+                detailsEl.textContent = JSON.stringify(response.details, null, 2);
+                careerEl.appendChild(document.createElement('br'));
+                careerEl.appendChild(detailsEl);
+            }
             return;
         }
 
@@ -356,4 +378,44 @@ function restartQuiz() {
     
     // Navigate to start screen
     navigateToSection('start-screen');
+}
+
+
+/**
+ * Validate that all displayed quiz questions have a selected answer.
+ * Highlights unanswered questions with a small required message.
+ * @returns {boolean}
+ */
+function validateQuizAnswered() {
+    let allAnswered = true;
+    const sections = ['logical', 'coding', 'quantitative', 'verbal'];
+
+    sections.forEach(section => {
+        const container = document.getElementById(`${section}-questions`);
+        const questionDivs = container.querySelectorAll('.question-container');
+
+        questionDivs.forEach(qd => {
+            const radios = qd.querySelectorAll('input[type="radio"]');
+            let answered = false;
+            radios.forEach(r => { if (r.checked) answered = true; });
+
+            // Remove previous required marker
+            let req = qd.querySelector('.required-marker');
+            if (req) req.remove();
+
+            if (!answered) {
+                allAnswered = false;
+                // Add small required message
+                const msg = document.createElement('div');
+                msg.className = 'required-marker';
+                msg.style.color = 'red';
+                msg.style.fontSize = '0.9em';
+                msg.style.marginTop = '6px';
+                msg.textContent = 'Required';
+                qd.appendChild(msg);
+            }
+        });
+    });
+
+    return allAnswered;
 }
