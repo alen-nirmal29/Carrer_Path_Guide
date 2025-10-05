@@ -218,17 +218,54 @@ function handleQuizSubmission() {
     // Show results section
     navigateToSection('results-section');
     
-    // Simulate sending data to prediction endpoint
-    setTimeout(() => {
-        // Hide loader
+    // Send data to prediction endpoint
+    document.querySelector('.loader').style.display = 'block';
+    fetch('http://localhost:5000/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(predictionData)
+    })
+    .then(res => res.json())
+    .then(response => {
         document.querySelector('.loader').style.display = 'none';
-        
-        // Show prediction result
         document.getElementById('prediction-result').style.display = 'block';
-        
-        // Display a mock prediction result
-        displayMockPrediction(predictionData);
-    }, 2000);
+
+        if (response.error) {
+            document.getElementById('career-path').textContent = 'Error: ' + response.error;
+            return;
+        }
+
+        // Show career path from backend
+        document.getElementById('career-path').textContent = response.career_path || 'Unknown';
+
+        // Show scores summary as before
+        const scoresSummary = document.getElementById('scores-summary');
+        scoresSummary.innerHTML = `
+            <h3>Your Scores:</h3>
+            <div class="score-item">
+                <span>Logical Reasoning:</span>
+                <span>${predictionData.LogicalScore.toFixed(1)} / 10</span>
+            </div>
+            <div class="score-item">
+                <span>Coding Knowledge:</span>
+                <span>${predictionData.CodingScore.toFixed(1)} / 10</span>
+            </div>
+            <div class="score-item">
+                <span>Quantitative Skills:</span>
+                <span>${predictionData.QuantitativeScore.toFixed(1)} / 10</span>
+            </div>
+            <div class="score-item">
+                <span>Verbal Reasoning:</span>
+                <span>${predictionData.VerbalScore.toFixed(1)} / 10</span>
+            </div>
+        `;
+    })
+    .catch(err => {
+        document.querySelector('.loader').style.display = 'none';
+        document.getElementById('prediction-result').style.display = 'block';
+        document.getElementById('career-path').textContent = 'Error connecting to prediction service.';
+        console.error('Prediction error:', err);
+    });
 }
 
 /**
